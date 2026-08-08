@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>SaudeCode</title>
+  <!--
+    Versão do glifo simplificada para 16px: os pontos internos dos alvos
+    somem, porque a essa altura eles viram um pixel sujo. O que precisa
+    sobreviver é a leitura "três cantos de QR + uma cruz".
+  -->
+  <rect width="32" height="32" rx="6" fill="#2f3a7c"/>
+  <g stroke="#fbfaf7" fill="none" stroke-width="2.8">
+    <rect x="5.4" y="5.4" width="7.7" height="7.7" rx="0.9"/>
+    <rect x="18.9" y="5.4" width="7.7" height="7.7" rx="0.9"/>
+    <rect x="5.4" y="18.9" width="7.7" height="7.7" rx="0.9"/>
+  </g>
+  <path d="M22.75 17.5v10.5M17.5 22.75h10.5" stroke="#fbfaf7" stroke-width="3.4" stroke-linecap="square"/>
+</svg>
