@@ -3,8 +3,9 @@
 -- Rode este arquivo inteiro no SQL Editor do Supabase.
 -- =====================================================================
 
-create extension if not exists pgcrypto;
-create extension if not exists pg_trgm;
+-- Sem dependência de extensão: gen_random_uuid() é nativo do PostgreSQL 13+
+-- e a busca por nome usa ILIKE, que não precisa de índice na escala de um
+-- protótipo. Menos coisa para dar errado na hora de instalar.
 
 -- ---------------------------------------------------------------------
 -- Hospitais / unidades de saúde
@@ -66,9 +67,7 @@ create table if not exists public.pacientes (
   atualizado_em         timestamptz not null default now()
 );
 
-create index if not exists pacientes_nome_trgm   on public.pacientes using gin (nome gin_trgm_ops);
-create index if not exists pacientes_apelido_trgm on public.pacientes using gin (apelido gin_trgm_ops);
-create index if not exists pacientes_criado_em   on public.pacientes (criado_em desc);
+create index if not exists pacientes_criado_em on public.pacientes (criado_em desc);
 
 -- ---------------------------------------------------------------------
 -- Condições de saúde (doenças que teve ou tem)
@@ -243,10 +242,19 @@ begin
   return new;
 end $$;
 
-drop trigger if exists ao_criar_usuario on auth.users;
-create trigger ao_criar_usuario
-  after insert on auth.users
-  for each row execute function public.criar_profissional();
+-- O gatilho vive em auth.users, que pertence ao Supabase. Se o papel do SQL
+-- Editor não puder alterá-la, o script segue: o app cria um perfil mínimo
+-- em memória e o acesso continua funcionando.
+do $$
+begin
+  execute 'drop trigger if exists ao_criar_usuario on auth.users';
+  execute 'create trigger ao_criar_usuario
+             after insert on auth.users
+             for each row execute function public.criar_profissional()';
+exception
+  when others then
+    raise notice 'Gatilho em auth.users não criado (%). O acesso funciona mesmo assim, mas o profissional não fica vinculado à unidade automaticamente.', sqlerrm;
+end $$;
 
 -- ---------------------------------------------------------------------
 -- Row Level Security
@@ -299,16 +307,16 @@ end $$;
 -- ---------------------------------------------------------------------
 -- Storage: fotos de identificação
 -- ---------------------------------------------------------------------
-insert into storage.buckets (id, name, public)
-values ('fotos-pacientes', 'fotos-pacientes', true)
-on conflict (id) do nothing;
-
--- Dependendo do plano, o papel do SQL Editor não é dono de storage.objects
--- e não consegue criar políticas. Nesse caso o bloco avisa em vez de abortar
--- o script inteiro — as quatro políticas podem ser criadas pela interface,
--- em Storage › fotos-pacientes › Policies.
+-- Dependendo do projeto, o papel do SQL Editor não é dono de storage.objects
+-- e não consegue criar o bucket nem as políticas. Nesse caso o bloco avisa em
+-- vez de abortar o script inteiro — dá para criar tudo pela interface, em
+-- Storage › New bucket (nome `fotos-pacientes`, público) › Policies.
 do $$
 begin
+  execute 'insert into storage.buckets (id, name, public)
+             values (''fotos-pacientes'', ''fotos-pacientes'', true)
+             on conflict (id) do nothing';
+
   execute 'drop policy if exists fotos_leitura on storage.objects';
   execute 'create policy fotos_leitura on storage.objects
              for select using (bucket_id = ''fotos-pacientes'')';
@@ -325,6 +333,6 @@ begin
   execute 'create policy fotos_remocao on storage.objects
              for delete to authenticated using (bucket_id = ''fotos-pacientes'')';
 exception
-  when insufficient_privilege then
-    raise notice 'Sem permissão para criar as políticas de storage. Crie-as pela interface do Supabase, em Storage > fotos-pacientes > Policies.';
+  when others then
+    raise notice 'Storage não configurado por SQL (%). Crie o bucket fotos-pacientes (público) e as políticas pela interface do Supabase.', sqlerrm;
 end $$;

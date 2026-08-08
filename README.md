@@ -34,9 +34,15 @@ No **SQL Editor** do projeto:
 
 Os dois scripts podem ser executados mais de uma vez sem duplicar nada.
 
-> Se o `schema.sql` avisar que não teve permissão para criar as políticas de
-> **storage**, crie as quatro pela interface em Storage › `fotos-pacientes` ›
-> Policies. O resto do script já terá rodado normalmente.
+> **O SQL Editor roda o script inteiro numa transação só.** Se qualquer comando
+> falhar, tudo é desfeito — inclusive as tabelas criadas antes dele. Um
+> `relation "public.hospitais" does not exist` ao rodar o seed quase sempre
+> significa que o `schema.sql` falhou em algum ponto e não deixou nada de pé.
+>
+> Por isso as duas partes que dependem de permissões especiais — o gatilho em
+> `auth.users` e a configuração do storage — estão isoladas em blocos que
+> avisam em vez de abortar. Se aparecer um desses avisos, o resto do banco já
+> está criado e você só precisa completar o que faltou pela interface.
 
 ### 3. Desligar a confirmação por e-mail
 
