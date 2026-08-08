@@ -1,0 +1,296 @@
+@import "tailwindcss";
+
+/* =====================================================================
+   SaudeCode — sistema visual
+   Referência: o prontuário de papel. Pasta de arquivo, formulário
+   pautado, cópia carbono, carimbo. Tema único e claro: papel é claro.
+   ===================================================================== */
+
+@theme {
+  /* Superfícies */
+  --color-papel: #edebe4;
+  --color-papel-fundo: #e4e1d8;
+  --color-folha: #fbfaf7;
+  --color-folha-2: #f4f2ea;
+
+  /* Tinta */
+  --color-tinta: #1a1a24;
+  --color-tinta-media: #4a4a5c;
+  --color-tinta-suave: #6b6b7d;
+
+  /* Linhas de corte */
+  --color-linha: #d8d5cb;
+  --color-linha-forte: #b7b3a5;
+
+  /* Acento: tinta de cópia carbono */
+  --color-carbono: #2f3a7c;
+  --color-carbono-escuro: #232c60;
+  --color-carbono-veu: #e8eaf5;
+
+  /* Semânticos — separados do acento */
+  --color-critico: #a32b1f;
+  --color-critico-veu: #f9e8e5;
+  --color-atencao: #8a5a0f;
+  --color-atencao-veu: #f8efdc;
+  --color-estavel: #2c6b4f;
+  --color-estavel-veu: #e5efe9;
+
+  /* Classificação de risco (protocolo de Manchester) */
+  --color-risco-vermelho: #b0271b;
+  --color-risco-laranja: #c1631a;
+  --color-risco-amarelo: #a58012;
+  --color-risco-verde: #2f7350;
+  --color-risco-azul: #2a5f8f;
+
+  --font-display: var(--fonte-display), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--fonte-corpo), "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--fonte-mono), "Cascadia Mono", Consolas, monospace;
+
+  --radius-folha: 3px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-papel);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.011em;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-carbono);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--color-carbono);
+  color: var(--color-folha);
+}
+
+/* ------------------------------------------------------------------ */
+/* Folhas — papel recortado: borda fina e sombra dura deslocada        */
+/* ------------------------------------------------------------------ */
+
+@utility folha {
+  background-color: var(--color-folha);
+  border: 1px solid var(--color-linha);
+  border-radius: var(--radius-folha);
+  box-shadow: 3px 3px 0 rgb(26 26 36 / 0.05);
+}
+
+@utility folha-rasa {
+  background-color: var(--color-folha);
+  border: 1px solid var(--color-linha);
+  border-radius: var(--radius-folha);
+}
+
+/* Empilhamento: sugere mais folhas por baixo */
+@utility folha-pilha {
+  background-color: var(--color-folha);
+  border: 1px solid var(--color-linha);
+  border-radius: var(--radius-folha);
+  box-shadow:
+    3px 3px 0 rgb(26 26 36 / 0.05),
+    7px 7px 0 -2px var(--color-folha),
+    8px 8px 0 -2px var(--color-linha);
+}
+
+/* ------------------------------------------------------------------ */
+/* Tipografia utilitária                                               */
+/* ------------------------------------------------------------------ */
+
+/* Etiqueta de campo de formulário */
+@utility rotulo {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-tinta-suave);
+}
+
+/* Dado tabular: códigos, sinais vitais, datas */
+@utility dado {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Controles                                                           */
+/* ------------------------------------------------------------------ */
+
+@utility campo {
+  display: block;
+  width: 100%;
+  background-color: var(--color-folha);
+  border: 1px solid var(--color-linha-forte);
+  border-radius: 2px;
+  padding: 0.5rem 0.625rem;
+  font-size: 14.5px;
+  color: var(--color-tinta);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.campo:hover:not(:disabled) {
+  border-color: var(--color-tinta-suave);
+}
+
+.campo:focus {
+  outline: none;
+  border-color: var(--color-carbono);
+  box-shadow: 0 0 0 3px var(--color-carbono-veu);
+}
+
+.campo:disabled {
+  background-color: var(--color-folha-2);
+  color: var(--color-tinta-suave);
+}
+
+.campo::placeholder {
+  color: #9a9aab;
+}
+
+@utility botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 2px;
+  border: 1px solid var(--color-tinta);
+  background-color: var(--color-tinta);
+  color: var(--color-folha);
+  padding: 0.5rem 0.9rem;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform 90ms ease, box-shadow 90ms ease, background-color 120ms ease;
+  box-shadow: 2px 2px 0 rgb(26 26 36 / 0.18);
+}
+
+.botao:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgb(26 26 36 / 0.22);
+}
+
+.botao:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgb(26 26 36 / 0.18);
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@utility botao-carbono {
+  border-color: var(--color-carbono);
+  background-color: var(--color-carbono);
+  color: #fff;
+}
+
+@utility botao-vazado {
+  border-color: var(--color-linha-forte);
+  background-color: var(--color-folha);
+  color: var(--color-tinta);
+  box-shadow: 2px 2px 0 rgb(26 26 36 / 0.07);
+}
+
+.botao-vazado:hover:not(:disabled) {
+  border-color: var(--color-tinta);
+  box-shadow: 3px 3px 0 rgb(26 26 36 / 0.11);
+}
+
+@utility botao-critico {
+  border-color: var(--color-critico);
+  background-color: var(--color-critico);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Carimbo — usado só onde há decisão clínica em jogo                  */
+/* ------------------------------------------------------------------ */
+
+@utility carimbo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Formulário pautado                                                  */
+/* ------------------------------------------------------------------ */
+
+@utility pauta {
+  border-bottom: 1px solid var(--color-linha);
+}
+
+.pauta:last-child {
+  border-bottom: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Impressão — pulseira e prontuário                                   */
+/* ------------------------------------------------------------------ */
+
+@media print {
+  @page {
+    margin: 10mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .sem-impressao {
+    display: none !important;
+  }
+
+  .folha,
+  .folha-pilha,
+  .folha-rasa {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
