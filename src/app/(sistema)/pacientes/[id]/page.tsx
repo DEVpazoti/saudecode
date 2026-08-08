@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { carregarProntuario } from "@/lib/prontuario";
+import { carregarProntuario, registrarAcesso } from "@/lib/prontuario";
 import { montarAlertas } from "@/lib/alertas";
-import { registrarAcesso, removerItem } from "@/app/acoes/pacientes";
+import { removerItem } from "@/app/acoes/pacientes";
 import { FaixaAlertas } from "@/components/FaixaAlertas";
 import { Foto } from "@/components/Foto";
 import { AdicionarItem, type CampoDescricao } from "@/components/AdicionarItem";

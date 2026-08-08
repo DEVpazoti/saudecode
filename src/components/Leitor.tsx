@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { extrairCodigo } from "@/lib/codigo";
 
-type Estado = "parado" | "iniciando" | "lendo" | "erro";
+type Estado = "parado" | "iniciando" | "lendo" | "encontrado" | "erro";
 
 const ALVO = "leitor-qr";
 
@@ -23,11 +23,22 @@ export function Leitor() {
 
   useEffect(() => {
     return () => {
-      const atual = leitor.current;
-      leitor.current = null;
-      atual?.stop().then(() => atual.clear()).catch(() => {});
+      void desligar();
     };
   }, []);
+
+  /** Desliga a câmera e libera o elemento de vídeo. Seguro de chamar duas vezes. */
+  async function desligar() {
+    const atual = leitor.current;
+    leitor.current = null;
+    if (!atual) return;
+    try {
+      await atual.stop();
+      atual.clear();
+    } catch {
+      // Já estava parado — nada a fazer.
+    }
+  }
 
   async function iniciar() {
     setErro(null);
@@ -42,17 +53,31 @@ export function Leitor() {
 
       await instancia.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 230, height: 230 } },
-        (texto) => {
+        // Sem `qrbox`: a biblioteca desenharia um recorte sombreado por cima
+        // do vídeo, calculado sobre o tamanho nativo da câmera — o que sai
+        // desalinhado do nosso visor quadrado. As marcas de canto abaixo já
+        // dizem para onde mirar.
+        { fps: 10 },
+        async (texto) => {
           if (lido.current) return;
           const codigo = extrairCodigo(texto);
           if (!codigo) return;
 
           lido.current = true;
-          instancia
-            .stop()
-            .catch(() => {})
-            .finally(() => router.push(`/p/${codigo}`));
+          setEstado("encontrado");
+
+          // Desliga a câmera por completo ANTES de sair da página. Navegar
+          // com o vídeo ainda rodando deixava a biblioteca desmontando o
+          // elemento no meio da transição, e a página seguinte falhava.
+          await desligar();
+
+          // Navegação dura, não do roteador. É justamente a transição do
+          // roteador que falhava aqui ("não foi possível carregar a página",
+          // resolvida com um reload manual). A carga completa também garante
+          // que a câmera e o decodificador saiam da memória, o que pesa no
+          // celular do plantão.
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+          window.location.assign(`/p/${codigo}`);
         },
         () => {
           // Quadro sem QR legível — normal, não é erro.
@@ -75,12 +100,7 @@ export function Leitor() {
   }
 
   async function parar() {
-    const atual = leitor.current;
-    leitor.current = null;
-    if (atual) {
-      await atual.stop().catch(() => {});
-      atual.clear();
-    }
+    await desligar();
     setEstado("parado");
   }
 
@@ -106,24 +126,29 @@ export function Leitor() {
           código for reconhecido.
         </p>
 
-        {/* Visor: molduras de corte nos quatro cantos */}
-        <div className="relative mx-auto mt-5 aspect-square w-full max-w-sm border border-linha-forte bg-papel-fundo">
-          <div id={ALVO} className="h-full w-full overflow-hidden" />
+        {/* Visor quadrado: o vídeo preenche por recorte, nunca deforma */}
+        <div className="relative mx-auto mt-5 aspect-square w-full max-w-sm overflow-hidden border border-linha-forte bg-papel-fundo">
+          <div id={ALVO} className="visor-qr h-full w-full" />
 
-          {estado !== "lendo" && (
+          {estado === "parado" || estado === "erro" ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
               <p className="text-[14px] leading-relaxed text-tinta-media">
-                {estado === "iniciando"
-                  ? "Abrindo a câmera…"
-                  : "A câmera fica desligada até você pedir."}
+                A câmera fica desligada até você pedir.
               </p>
-              {estado !== "iniciando" && (
-                <button type="button" onClick={iniciar} className="botao botao-carbono">
-                  Ligar a câmera
-                </button>
-              )}
+              <button type="button" onClick={iniciar} className="botao botao-carbono">
+                Ligar a câmera
+              </button>
             </div>
-          )}
+          ) : estado === "iniciando" ? (
+            <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+              <p className="text-[14px] text-tinta-media">Abrindo a câmera…</p>
+            </div>
+          ) : estado === "encontrado" ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-folha/95 px-6 text-center">
+              <p className="text-[15px] font-medium text-estavel">Código lido</p>
+              <p className="text-[13.5px] text-tinta-media">Abrindo o prontuário…</p>
+            </div>
+          ) : null}
 
           {[
             "top-0 left-0 border-t-2 border-l-2",
@@ -134,7 +159,11 @@ export function Leitor() {
             <span
               key={posicao}
               aria-hidden="true"
-              className={`pointer-events-none absolute h-6 w-6 border-tinta ${posicao}`}
+              className={`pointer-events-none absolute h-6 w-6 ${posicao} ${
+                estado === "lendo"
+                  ? "border-folha drop-shadow-[0_0_2px_rgba(0,0,0,0.55)]"
+                  : "border-tinta"
+              }`}
             />
           ))}
         </div>

@@ -1,5 +1,5 @@
 import "server-only";
-import { criarClienteServidor } from "./supabase/servidor";
+import { criarClienteServidor, profissionalAtual } from "./supabase/servidor";
 import type {
   Alergia,
   AlertaFixado,
@@ -90,6 +90,29 @@ export async function carregarProntuario(
     fixados: (fixados ?? []) as AlertaFixado[],
     atendimentos: (atendimentos ?? []) as Atendimento[],
   };
+}
+
+/**
+ * Grava na trilha de acesso quem abriu o prontuário (LGPD).
+ *
+ * Função de servidor comum, não Server Action: ela é chamada durante a
+ * renderização do prontuário e nunca a partir do navegador. Como Server
+ * Action, cada export viraria um endpoint HTTP público — e qualquer um
+ * poderia forjar registros de auditoria.
+ */
+export async function registrarAcesso(
+  pacienteId: string,
+  origem: "qrcode" | "busca" | "link",
+): Promise<void> {
+  const supabase = await criarClienteServidor();
+  const profissional = await profissionalAtual();
+
+  await supabase.from("acessos").insert({
+    paciente_id: pacienteId,
+    profissional_id: profissional?.id ?? null,
+    acao: "consulta",
+    origem,
+  });
 }
 
 /** Resolve o código impresso na pulseira. */

@@ -261,6 +261,27 @@ h4 {
 }
 
 /* ------------------------------------------------------------------ */
+/* Visor do leitor de QR                                               */
+/*                                                                     */
+/* A html5-qrcode injeta um <video> com as dimensões nativas da câmera */
+/* (4:3 ou 16:9) e as escreve no atributo style do elemento, por isso  */
+/* o !important. `cover` recorta as sobras em vez de deformar o rosto  */
+/* da imagem — o quadro fica quadrado sem distorcer o que se vê.       */
+/* ------------------------------------------------------------------ */
+
+.visor-qr video {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+/* Placeholder de permissão que a biblioteca desenha sozinha */
+.visor-qr img {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
 /* Impressão — pulseira e prontuário                                   */
 /* ------------------------------------------------------------------ */
 

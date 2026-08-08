@@ -307,21 +307,5 @@ export async function removerItem(dados: FormData): Promise<void> {
   revalidatePath(`/pacientes/${pacienteId}`);
 }
 
-// --------------------------------------------------------------------
-// Trilha de acesso (LGPD)
-// --------------------------------------------------------------------
-
-export async function registrarAcesso(
-  pacienteId: string,
-  origem: "qrcode" | "busca" | "link",
-): Promise<void> {
-  const supabase = await criarClienteServidor();
-  const profissional = await profissionalAtual();
-
-  await supabase.from("acessos").insert({
-    paciente_id: pacienteId,
-    profissional_id: profissional?.id ?? null,
-    acao: "consulta",
-    origem,
-  });
-}
+// A trilha de acesso (LGPD) mora em lib/prontuario.ts: é chamada só durante
+// a renderização, e como Server Action viraria um endpoint público.
