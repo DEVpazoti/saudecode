@@ -1,148 +1,121 @@
 # SaudeCode
 
-Protótipo funcional de um sistema de identificação e histórico de saúde para
-pessoas em situação de rua.
+**Sistema de identificação e histórico de saúde para pessoas em situação de rua.**
 
-A ideia: quem vive na rua costuma chegar ao pronto-socorro sem documento, sem
-acompanhante e muitas vezes sem conseguir falar. Cada unidade abre uma ficha
-nova e recomeça do zero. O SaudeCode dá a essa pessoa uma pulseira com QR Code —
-a leitura abre, em qualquer unidade da rede, o prontuário inteiro dela.
+🔗 **[saudecode.vercel.app](https://saudecode.vercel.app/)** · Protótipo funcional
 
-**Pilha:** Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Supabase
-(Postgres, Auth e Storage) · deploy na Vercel.
+<img width="1901" height="942" alt="painel-saudecode" src="https://github.com/user-attachments/assets/d2d7d330-d41a-4a3d-a435-7ead34160682" />
+
+<img width="1899" height="940" alt="pessoa-saudecode" src="https://github.com/user-attachments/assets/2ed73c5a-dcd2-4bc8-ba9d-509a578a21c6" />
+   
+---
+
+## O problema
+
+Quem vive na rua costuma chegar ao pronto-socorro sem documento, sem acompanhante e muitas vezes sem conseguir falar. Cada unidade abre uma ficha nova e recomeça do zero: não se sabe as alergias, as condições crônicas, o que foi prescrito na semana passada nem quantas vezes aquela pessoa já voltou pelo mesmo motivo.
+
+O SaudeCode dá a essa pessoa uma pulseira com QR Code. A leitura abre, em qualquer unidade da rede, o prontuário inteiro dela.
 
 ---
 
-## Colocar para rodar
+## Como funciona
 
-### 1. Criar o projeto no Supabase
+```
+cadastro com foto  →  gera código e pulseira  →  leitura do QR em qualquer unidade  →  prontuário completo
+```
 
-Em [supabase.com](https://supabase.com), crie um projeto novo. Escolha a região
-**South America (São Paulo)** para o banco ficar perto de quem vai usar.
+| Tela | O que faz |
+|---|---|
+| `/pacientes/novo` | Cadastro com foto; ao salvar, gera o código e a pulseira |
+| `/pacientes/[id]/pulseira` | Pulseira e cartão de bolso, prontos para impressão |
+| `/escanear` | Leitura do QR pela câmera, com digitação do código como alternativa |
+| `/p/[codigo]` | Destino do QR — resolve o código e abre o prontuário |
+| `/pacientes/[id]` | Prontuário: alertas, alergias, condições, medicamentos, cirurgias, vacinas e linha do tempo |
+| `/pacientes` | Busca por nome, apelido, código, tatuagem, cicatriz ou local de permanência |
+| `/painel` | Números da unidade, últimos atendimentos, quem retorna com frequência e classificação de risco |
 
-### 2. Rodar o esquema e os dados de demonstração
+A busca por tatuagem, cicatriz e local de permanência não é detalhe: quando a pessoa não tem documento e não consegue dizer o nome, é por aí que a equipe chega até ela.
 
-No **SQL Editor** do projeto:
+---
 
-1. Cole e execute todo o conteúdo de [`supabase/schema.sql`](supabase/schema.sql)
-   — cria as tabelas, as políticas de segurança (RLS), o gatilho que cria o
-   perfil do profissional no primeiro acesso e o bucket de fotos.
-2. Cole e execute [`supabase/seed.sql`](supabase/seed.sql) — carrega quatro
-   unidades e seis pessoas fictícias com históricos completos, inclusive um caso
-   de embriaguez recorrente e um de hipoglicemia de repetição, que são os
-   padrões que o sistema detecta sozinho.
+## Os alertas automáticos
 
-Os dois scripts podem ser executados mais de uma vez sem duplicar nada.
+Esta é a parte central do sistema. O prontuário não abre por nome e endereço — abre pelo que muda a conduta nos próximos dez minutos.
 
-> **O SQL Editor roda o script inteiro numa transação só.** Se qualquer comando
-> falhar, tudo é desfeito — inclusive as tabelas criadas antes dele. Um
-> `relation "public.hospitais" does not exist` ao rodar o seed quase sempre
-> significa que o `schema.sql` falhou em algum ponto e não deixou nada de pé.
+Além do que a equipe marca à mão, o sistema deriva do próprio histórico:
+
+- **Alergias graves e anafiláticas**
+- **Doenças transmissíveis ativas**, com a precaução indicada
+- **Embriaguez recorrente** — quantas das últimas chegadas foram sob efeito de álcool em 12 meses
+- **Hipoglicemia de repetição**, com o menor valor já registrado
+- **Evasão antes da alta** — a janela de contato é curta, vale resolver na primeira abordagem
+- **Uso frequente da emergência**, que sinaliza necessidade não resolvida na atenção básica
+- **Medicação de uso contínuo** e lacunas do cadastro
+
+A regra de decisão está isolada em `src/lib/alertas.ts`, separada da tela — o que permite mudar o critério clínico sem mexer na interface.
+
+---
+
+## Privacidade
+
+A pulseira **não carrega nenhum dado clínico**. O QR Code guarda apenas um código aleatório. Quem escaneia sem estar autenticado é parado no login e não vê nada, nem o nome.
+
+Cada abertura de prontuário é gravada na tabela `acessos`, com o profissional, a hora e a origem (pulseira ou busca). O cadastro registra o consentimento da pessoa para o histórico ser compartilhado entre as unidades.
+
+### Limites deste protótipo, assumidos de propósito
+
+- Qualquer profissional autenticado enxerga a rede inteira. É o ponto do sistema — a pessoa é atendida em qualquer unidade —, mas num sistema real isso pediria perfis de acesso mais finos.
+- O bucket de fotos é público com nomes de arquivo aleatórios. Em produção deveria ser privado, com URLs assinadas.
+- Uso real exigiria parecer de comitê de ética, avaliação de impacto à proteção de dados (LGPD, art. 11 — dado de saúde é dado sensível) e homologação junto à secretaria de saúde.
+
+**Todos os dados de demonstração são fictícios.**
+
+---
+
+## Stack
+
+`Next.js 16 (App Router)` · `TypeScript` · `Tailwind CSS 4` · `Supabase (Postgres, Auth e Storage)` · `Vercel`
+
+---
+
+## Rodar localmente
+
+**1. Criar o projeto no Supabase.** Em [supabase.com](https://supabase.com), escolha a região *South America (São Paulo)* para o banco ficar perto de quem vai usar.
+
+**2. Rodar o esquema e os dados de demonstração.** No SQL Editor, execute na ordem:
+
+- `supabase/schema.sql` — tabelas, políticas de segurança (RLS), o gatilho que cria o perfil do profissional no primeiro acesso e o bucket de fotos
+- `supabase/seed.sql` — quatro unidades e seis pessoas fictícias com históricos completos, incluindo um caso de embriaguez recorrente e um de hipoglicemia de repetição, que são os padrões que o sistema detecta sozinho
+
+Os dois scripts podem rodar mais de uma vez sem duplicar nada.
+
+> O SQL Editor roda o script inteiro numa transação só: se qualquer comando falhar, tudo é desfeito — inclusive as tabelas criadas antes dele. Um `relation "public.hospitais" does not exist` ao rodar o seed quase sempre significa que o `schema.sql` falhou em algum ponto e não deixou nada de pé.
 >
-> Por isso as duas partes que dependem de permissões especiais — o gatilho em
-> `auth.users` e a configuração do storage — estão isoladas em blocos que
-> avisam em vez de abortar. Se aparecer um desses avisos, o resto do banco já
-> está criado e você só precisa completar o que faltou pela interface.
+> Por isso as duas partes que dependem de permissões especiais — o gatilho em `auth.users` e a configuração do storage — estão isoladas em blocos que avisam em vez de abortar. Se aparecer um desses avisos, o resto do banco já está criado e você só precisa completar o que faltou pela interface.
 
-### 3. Desligar a confirmação por e-mail
+**3. Desligar a confirmação por e-mail.** Em *Authentication › Sign In / Providers › Email*, desmarque **Confirm email**. Sem isso, a conta criada na tela de acesso fica pendente e não consegue entrar.
 
-Em **Authentication › Sign In / Providers › Email**, desmarque **Confirm email**.
-Sem isso, a conta criada na tela de acesso fica pendente e não consegue entrar.
+**4. Preencher as chaves.** Copie `.env.example` para `.env.local` com os valores de *Project Settings › API*:
 
-### 4. Preencher as chaves
-
-Copie `.env.example` para `.env.local` e preencha com os valores de
-**Project Settings › API**:
-
-```bash
+```
 NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
-### 5. Rodar
+**5. Rodar.**
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abra <http://localhost:3000>, clique em **Acessar o sistema** e use a aba
-**Criar acesso** para gerar a primeira conta da equipe. Enquanto as chaves não
-estiverem preenchidas, o sistema mostra a tela de configuração em vez de quebrar.
+Abra `http://localhost:3000`, clique em **Acessar o sistema** e use a aba *Criar acesso* para gerar a primeira conta da equipe. Enquanto as chaves não estiverem preenchidas, o sistema mostra a tela de configuração em vez de quebrar.
 
----
+### Deploy na Vercel
 
-## O que dá para fazer
+Importe o repositório em *Add New › Project* — o Next.js é detectado sozinho. Em *Environment Variables*, adicione `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e, depois do primeiro deploy, `NEXT_PUBLIC_URL_BASE` com o domínio final — é ele que vai impresso dentro do QR Code das pulseiras.
 
-| Tela | O que faz |
-| --- | --- |
-| `/` | Landing page explicando o sistema, com uma pulseira de verdade renderizada |
-| `/entrar` | Acesso e criação de conta da equipe, vinculada a uma unidade |
-| `/painel` | Números da unidade, últimos atendimentos, quem retorna com frequência, classificação de risco e encaminhamentos |
-| `/pacientes` | Busca por nome, apelido, código, tatuagem, cicatriz ou local de permanência |
-| `/pacientes/novo` | Cadastro com foto; ao salvar, gera o código e a pulseira |
-| `/pacientes/[id]` | Prontuário: alertas, alergias, condições, medicamentos, cirurgias, vacinas e linha do tempo |
-| `/pacientes/[id]/atendimento` | Registro de atendimento com triagem de Manchester e sinais vitais |
-| `/pacientes/[id]/pulseira` | Pulseira e cartão de bolso, prontos para impressão |
-| `/escanear` | Leitura do QR pela câmera, com digitação do código como alternativa |
-| `/p/[codigo]` | Destino do QR Code — resolve o código e abre o prontuário |
-
-### Os alertas automáticos
-
-O prontuário não abre por nome e endereço; abre pelo que muda a conduta nos
-próximos dez minutos. Além do que a equipe fixa à mão, [`src/lib/alertas.ts`](src/lib/alertas.ts)
-deriva do histórico:
-
-- alergias graves e anafiláticas;
-- doenças transmissíveis ativas, com a precaução indicada;
-- **embriaguez recorrente** — quantas das últimas chegadas foram sob efeito de
-  álcool em 12 meses;
-- uso recorrente de outras substâncias;
-- **hipoglicemia de repetição**, com o menor valor já registrado;
-- evasão antes da alta (a janela de contato é curta — vale resolver na primeira
-  abordagem);
-- uso frequente da emergência, que sinaliza necessidade não resolvida na
-  atenção básica;
-- medicação de uso contínuo e lacunas do cadastro.
-
----
-
-## Deploy na Vercel
-
-1. Suba o repositório para o GitHub.
-2. Na Vercel, **Add New › Project** e importe o repositório. O Next.js é
-   detectado sozinho.
-3. Em **Environment Variables**, adicione `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY` e, depois do primeiro deploy,
-   `NEXT_PUBLIC_URL_BASE` com o domínio final — é ele que vai impresso dentro
-   do QR Code das pulseiras.
-4. Deploy.
-
-> Pulseiras impressas antes de o domínio final existir continuam válidas: o
-> código é o mesmo e pode ser digitado na tela de leitura. Mas vale reimprimir.
-
----
-
-## Privacidade
-
-A pulseira **não carrega nenhum dado clínico** — o QR Code guarda apenas um
-código aleatório. Quem escaneia sem estar autenticado é parado no login e não vê
-nada, nem o nome. Cada abertura de prontuário é gravada na tabela `acessos`,
-com o profissional, a hora e a origem (pulseira ou busca). O cadastro registra
-o consentimento da pessoa para o histórico ser compartilhado entre as unidades.
-
-**Limites deste protótipo, assumidos de propósito:**
-
-- Qualquer profissional autenticado enxerga a rede inteira. É o ponto do
-  sistema — a pessoa é atendida em qualquer unidade —, mas num sistema real
-  isso pediria perfis de acesso mais finos.
-- O bucket de fotos é público com nomes de arquivo aleatórios. Em produção
-  deveria ser privado com URLs assinadas.
-- Uso real exigiria parecer de comitê de ética, avaliação de impacto à proteção
-  de dados (LGPD, art. 11 — dado de saúde é dado sensível) e homologação junto
-  à secretaria de saúde.
-
-Todos os dados de demonstração são fictícios.
+Pulseiras impressas antes de o domínio final existir continuam válidas: o código é o mesmo e pode ser digitado na tela de leitura. Mas vale reimprimir.
 
 ---
 
@@ -172,11 +145,13 @@ supabase/
   seed.sql                      dados de demonstração
 ```
 
-## Comandos
-
 ```bash
 npm run dev     # desenvolvimento
 npm run build   # build de produção
 npm run lint    # eslint
 npm run start   # servir o build
 ```
+
+---
+
+Feito por **Guilherme Pazoti** — [LinkedIn](https://www.linkedin.com/in/guilherme-pazoti)
