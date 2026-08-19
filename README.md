@@ -4,9 +4,19 @@
 
 🔗 **[saudecode.vercel.app](https://saudecode.vercel.app/)** · Protótipo funcional
 
-<img width="1901" height="942" alt="painel-saudecode" src="https://github.com/user-attachments/assets/d2d7d330-d41a-4a3d-a435-7ead34160682" />
+<p align="center">
+  <img src= <img width="1899" height="940" alt="pessoa-saudecode" src="https://github.com/user-attachments/assets/7279de6f-baae-410b-9cf3-020c28fd446e" />
+ alt="Prontuário com a faixa de alertas" width="700">
+  <br>
+  <em>O prontuário abre pelos alertas — não por nome e endereço</em>
+</p>
 
-<img width="1899" height="940" alt="pessoa-saudecode" src="https://github.com/user-attachments/assets/2ed73c5a-dcd2-4bc8-ba9d-509a578a21c6" />
+<p align="center">
+  <img src=" <img width="1901" height="942" alt="painel-saudecode" src="https://github.com/user-attachments/assets/bfab7484-cfcb-4770-b5aa-dfcad12e4a4f" />
+ " alt="Painel da unidade" width="700">
+  <br>
+  <em>Painel da unidade: últimos atendimentos, quem retorna com frequência e classificação de risco</em>
+</p>
    
 ---
 
